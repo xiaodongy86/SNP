@@ -1,0 +1,28 @@
+# TEST BI-SNP IN ARABIDOPSIS , run this test on memory dataset wild type gen1 plant1
+
+# First add read group tag to bam file 
+java -jar picard.jar AddOrReplaceReadGroups \
+       I=FCHLFMLALXX_L5_ARAkxqHAAAAAAA-18_1_val_1_bismark_bt2_pe.bam \
+       O=FCHLFMLALXX_L5_ARAkxqHAAAAAAA-18_1_val_1_bismark_bt2_pe_ReadGroups.bam \
+       RGID=4 \
+       RGLB=lib1 \
+       RGPL=illumina \
+       RGPU=unit1 \
+       RGSM=20
+
+#and download the SNP vcf file from arabidopsis SNP database 
+wget https://1001genomes.org/data/GMI-MPI/releases/v3.1/1001genomes_snp-short-indel_only_ACGTN.vcf.gz
+gunzip -c 1001genomes_snp-short-indel_only_ACGTN.vcf.gz.1 > 1001genomes_snp-short-indel_only_ACGTN.vcf
+
+# then get the arabidopsis reference genome
+wget ftp://ftp.ensemblgenomes.org/pub/plants/current/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz
+gunzip -c Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz > Arabidopsis_thaliana.TAIR10.dna.toplevel.fa
+
+# Creating the fasta sequence dictionary file
+java -jar picard.jar CreateSequenceDictionary R= Arabidopsis_thaliana.TAIR10.dna.toplevel.fa O= Arabidopsis_thaliana.TAIR10.dna.toplevel.dict
+
+#Creating the fasta index file
+samtools faidx Arabidopsis_thaliana.TAIR10.dna.toplevel.fa
+
+# then run BisSNP-0.82.2 make sure all files under same folder
+java -Xmx400g -jar BisSNP-0.82.2.jar -T BisulfiteGenotyper -R Arabidopsis_thaliana.TAIR10.dna.toplevel.fa -I FCHLFMLALXX_L5_ARAkxqHAAAAAAA-18_1_val_1_bismark_bt2_pe_ReadGroups.bam -D 1001genomes_snp-short-indel_only_ACGTN.vcf -vfn1 cpg.wt_1_1.vcf -vfn2 snp.wt_1_1.raw.vcf 
